@@ -19,8 +19,8 @@ jobs:
       - name: Lint (ruff)
         run: uvx ruff check .
 
+      - name: Install dependencies (incl. vehicle-safety-mcp from GitHub)
+        run: uv sync --frozen
+
       - name: Tests (pytest)
-        run: |
-          # Day 1: no tests yet. pytest exits 5 on "no tests collected";
-          # treat that as success until backend/tests/ has real tests.
-          uvx pytest backend/tests || [ $? -eq 5 ]
+        run: uv run --no-sync pytest

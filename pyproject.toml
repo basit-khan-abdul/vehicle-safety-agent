@@ -1,0 +1,37 @@
+[project]
+name = "vehicle-safety-agent"
+version = "0.1.0"
+description = "Agentic vehicle-safety intelligence agent (US + EU): investigates safety questions end-to-end and produces cited briefs."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Basit Khan" }]
+
+dependencies = [
+    # The NHTSA client, imported as a LIBRARY from the published MCP package.
+    # The agent and the MCP server share one client — trimming/resilience logic
+    # lives in exactly one place and can never drift between the two surfaces.
+    # Pinned to a release tag (not a branch) so builds are reproducible.
+    "vehicle-safety-mcp @ git+https://github.com/basit-khan-abdul/vehicle-safety-mcp.git@v0.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+]
+
+[tool.uv]
+# This repo is an application, not a distributable package: the code lives under
+# backend/app, so there is no top-level module matching the project name to
+# build. Have uv manage the dependency environment without trying to build us.
+package = false
+
+[tool.pytest.ini_options]
+# asyncio_mode=auto lets plain `async def test_*` run without per-test markers,
+# matching the vehicle-safety-mcp test suite. pythonpath=backend makes the
+# top-level `app` package importable (backend/ is the source root; it has no
+# __init__.py of its own).
+asyncio_mode = "auto"
+pythonpath = ["backend"]
+testpaths = ["backend/tests"]
