@@ -1,0 +1,11 @@
+# docker-compose.yml — scaffold stub.
+#
+# Defines nothing runnable yet (Day 1: scaffold only). The backend service below
+# is a placeholder; ports, command, and dependencies land once the backend
+# actually serves something.
+
+services:
+  backend:
+    build: .
+    env_file: .env
+    # command / ports / depends_on to be added when the backend serves an API.
