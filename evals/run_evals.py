@@ -48,6 +48,10 @@ GOLDEN_PATH = ROOT / "golden_set.yaml"
 RESULTS_DIR = ROOT / "results"
 JUDGE_MODEL = "claude-sonnet-4-6"
 
+# Make the backend `app` package importable (backend/ is the source root, same
+# convention as pyproject's pytest pythonpath and the smoke script).
+sys.path.insert(0, str(ROOT.parent / "backend"))
+
 EXPECTED_COUNTS = {
     "us_recall_lookup": 6,
     "vin_decode": 3,
@@ -61,18 +65,32 @@ CATEGORIES = list(EXPECTED_COUNTS)
 
 
 # ---------------------------------------------------------------------------
-# answer_fn — the pluggable seam. Swap this for the real agent later. The agent
-# must return {"answer": str, "citations": list, "tool_calls": list}.
+# answer_fn — the pluggable seam. Runs the real investigation loop. The agent
+# returns {"answer": str, "citations": list, "tool_calls": list, "usage": dict};
+# the harness reads the first three.
 # ---------------------------------------------------------------------------
 def answer_fn(question: str) -> dict:
-    """STUB. Returns a non-answer so the baseline honestly scores ~0%."""
+    """Real vehicle-safety agent — runs the tool-use loop for one question."""
+    try:
+        import asyncio
+
+        from app.agent.loop import run_agent
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        if not settings.anthropic_api_key:
+            raise RuntimeError("ANTHROPIC_API_KEY is not set")
+        result = asyncio.run(run_agent(question, settings=settings))
+    except Exception as exc:  # keep the harness resilient — surface, don't crash
+        return {
+            "answer": f"agent error: {type(exc).__name__}: {exc}",
+            "citations": [],
+            "tool_calls": [],
+        }
     return {
-        "answer": (
-            "Not implemented yet: the vehicle-safety agent does not exist. This is a "
-            "scaffold stub so the eval harness can run end to end and establish a baseline."
-        ),
-        "citations": [],
-        "tool_calls": [],
+        "answer": result.get("answer", ""),
+        "citations": result.get("citations", []),
+        "tool_calls": result.get("tool_calls", []),
     }
 
 

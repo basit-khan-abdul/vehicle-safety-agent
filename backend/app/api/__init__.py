@@ -1,1 +1,1 @@
-"""HTTP API surface for the agent (not yet implemented)."""
+"""HTTP API surface for the agent — FastAPI app with /ask and /healthz."""

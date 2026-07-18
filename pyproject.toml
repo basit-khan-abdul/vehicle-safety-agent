@@ -13,6 +13,12 @@ dependencies = [
     # lives in exactly one place and can never drift between the two surfaces.
     # Pinned to a release tag (not a branch) so builds are reproducible.
     "vehicle-safety-mcp @ git+https://github.com/basit-khan-abdul/vehicle-safety-mcp.git@v0.2.0",
+    # Agent + API stack.
+    "anthropic>=0.40",       # Claude tool-use loop (AsyncAnthropic)
+    "fastapi>=0.115",        # HTTP surface
+    "uvicorn[standard]>=0.30",  # ASGI server for local run / container
+    "pydantic-settings>=2.4",   # typed settings from env / .env
+    "slowapi>=0.1.9",        # per-IP rate limiting
 ]
 
 [dependency-groups]
