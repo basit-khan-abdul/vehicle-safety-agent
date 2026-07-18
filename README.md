@@ -36,8 +36,14 @@ this table stays empty until a real eval run produces them.
 
 ## Status
 
-**Day 1 — scaffold only. Nothing works yet.** The directory layout, CI, and documentation
-skeletons exist. There is no agent logic, no tools wired up, and no eval set written yet.
+**First slice working, baseline pending.** The scaffold, CI, and docs skeleton are in
+place. The golden eval set (25 graded questions across 7 categories) and its grading
+harness are committed. The tool layer is wired to
+[`vehicle-safety-mcp`](https://github.com/basit-khan-abdul/vehicle-safety-mcp) (VIN
+decode, recalls, NCAP ratings, complaints). The first agent slice is implemented: a
+Claude tool-use loop that turns a question into a cited brief, served over `POST /ask`
+with per-request cost and per-IP rate caps. The committed eval baseline is still the
+stub run (0%); the first live baseline against the real agent has not been run yet.
 
 ## Roadmap
 
