@@ -164,6 +164,13 @@ async def run_agent(
     if client is None:
         client = AsyncAnthropic(api_key=settings.anthropic_api_key)
 
+    # Adaptive extended thinking, applied to every model call. Thinking blocks
+    # are preserved verbatim across rounds (we append the whole response content
+    # to the transcript) and ignored when extracting the answer text.
+    thinking_kwargs: dict[str, Any] = (
+        {"thinking": {"type": "adaptive"}} if settings.extended_thinking else {}
+    )
+
     messages: list[dict[str, Any]] = [{"role": "user", "content": question}]
     records: list[dict[str, Any]] = []  # {marker, tool, args, result}
     slug_counts: dict[str, int] = {}
@@ -185,6 +192,7 @@ async def run_agent(
             system=SYSTEM_PROMPT,
             messages=messages,
             tools=registry.TOOL_SCHEMAS,
+            **thinking_kwargs,
         )
         in_tokens += resp.usage.input_tokens
         out_tokens += resp.usage.output_tokens
@@ -255,6 +263,7 @@ async def run_agent(
                 max_tokens=settings.max_output_tokens,
                 system=SYSTEM_PROMPT,
                 messages=messages,
+                **thinking_kwargs,
             )
             in_tokens += resp.usage.input_tokens
             out_tokens += resp.usage.output_tokens

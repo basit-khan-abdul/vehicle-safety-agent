@@ -30,9 +30,17 @@ class Settings(BaseSettings):
     # cost/latency sweet spot for this tool-driven, well-scoped task.
     anthropic_model: str = "claude-sonnet-4-6"
 
+    # Adaptive extended thinking: the model reasons before it plans tools and
+    # before it writes the final brief — worth it for the safety-critical
+    # citation/refusal discipline this agent is graded on. Off makes runs
+    # cheaper and fully deterministic (used by the loop's unit tests).
+    extended_thinking: bool = True
+
     # ---- Loop bounds ----
     max_tool_rounds: int = 6  # tool-call rounds before a forced final answer
-    max_output_tokens: int = 2048  # per Anthropic response
+    # Thinking tokens count toward the output budget, so leave headroom above
+    # what the brief itself needs.
+    max_output_tokens: int = 4096  # per Anthropic response
 
     # ---- Cost cap ----
     # Hard per-request ceiling. The loop estimates spend from usage tokens and
