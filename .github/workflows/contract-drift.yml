@@ -1,0 +1,103 @@
+name: Contract drift
+
+# The upstream NHTSA APIs are the ground truth this agent answers from. This job
+# re-runs the LIVE suite (backend/tests/live) on a schedule and, if it fails,
+# opens an issue — so an upstream change (an endpoint moved, a field renamed, a
+# response shape shifted) surfaces as tracked breakage instead of silent wrong
+# answers. It runs the agent's own adapter path, so it also catches drift in how
+# the agent integrates the shared client. The package (vehicle-safety-mcp) has
+# its own drift detector for the client itself; this one guards this repo.
+#
+# It is scheduled (not on every push) because third-party APIs are flaky enough
+# that per-push live tests would just add noise.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # 06:00 UTC every Monday
+  workflow_dispatch: # allow manual runs from the Actions tab
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  live-tests:
+    name: Live NHTSA contract check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install dependencies (incl. vehicle-safety-mcp from GitHub)
+        run: uv sync --frozen
+
+      - name: Run live tests against NHTSA
+        run: |
+          set -o pipefail
+          uv run --no-sync pytest -m live -v 2>&1 | tee pytest-live.log
+
+      - name: Open an issue on contract drift
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const label = "contract-drift";
+            const title = "Upstream NHTSA contract drift detected";
+
+            let log = "";
+            try {
+              log = fs.readFileSync("pytest-live.log", "utf8");
+            } catch (e) {
+              log = "(no test output was captured)";
+            }
+            // Keep the issue body small: last ~4000 chars of the failing output.
+            const tail = log.length > 4000 ? log.slice(-4000) : log;
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const body = [
+              `The scheduled live tests against the NHTSA APIs failed on ${new Date().toISOString().slice(0, 10)}.`,
+              ``,
+              `This usually means an upstream contract changed — an endpoint moved, a field was renamed, or a response shape shifted. Because the agent answers from this data, drift here can turn into silently wrong safety briefs.`,
+              ``,
+              `**Failed run:** ${run}`,
+              ``,
+              `**What to check:** the field lists / parsing in \`vehicle_safety_mcp/nhtsa.py\` (the shared client) against the current API responses; refresh the captured fixtures in \`backend/tests/unit/fixtures/\` if the shape legitimately changed.`,
+              ``,
+              `<details><summary>Failing test output (tail)</summary>`,
+              ``,
+              "```",
+              tail,
+              "```",
+              `</details>`,
+            ].join("\n");
+
+            // Avoid piling up duplicates: comment on an existing open one instead.
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: label,
+            });
+
+            if (open.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.data[0].number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: [label],
+              });
+            }

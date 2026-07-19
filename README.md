@@ -1,6 +1,6 @@
 # vehicle-safety-agent
 
-<!-- Badges intentionally omitted until CI has run and there is a release to point at. -->
+[![CI](https://github.com/basit-khan-abdul/vehicle-safety-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/basit-khan-abdul/vehicle-safety-agent/actions/workflows/ci.yml)
 
 ## What this is
 
@@ -44,6 +44,18 @@ decode, recalls, NCAP ratings, complaints). The first agent slice is implemented
 Claude tool-use loop that turns a question into a cited brief, served over `POST /ask`
 with per-request cost and per-IP rate caps. The committed eval baseline is still the
 stub run (0%); the first live baseline against the real agent has not been run yet.
+
+## Testing philosophy
+
+Tests split into two suites by what they trust. **Unit** tests (`backend/tests/unit/`)
+mock at httpx's transport, so the real shared client and its field-trimming execute
+offline and deterministically on every push and PR (Python 3.11 + 3.12) — no network,
+no flakiness, no API key. **Live** tests (`backend/tests/live/`, marked `live` and
+excluded by default; run with `pytest -m live`) hit the real NHTSA APIs to validate the
+actual upstream contract, and run only on demand or via a weekly scheduled job. When that
+weekly [contract-drift job](.github/workflows/contract-drift.yml) fails it auto-opens an
+issue, so an upstream change (a moved endpoint, a renamed field, a shifted response shape)
+surfaces as tracked breakage instead of silently wrong safety briefs.
 
 ## Roadmap
 

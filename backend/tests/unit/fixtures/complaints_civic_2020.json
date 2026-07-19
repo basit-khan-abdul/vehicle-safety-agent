@@ -1,0 +1,72 @@
+{
+  "count": 217,
+  "message": "Results returned successfully",
+  "results": [
+    {
+      "odiNumber": 11749531,
+      "manufacturer": "Honda (American Honda Motor Co.)",
+      "crash": false,
+      "fire": false,
+      "numberOfInjuries": 0,
+      "numberOfDeaths": 0,
+      "dateOfIncident": "07/06/2026",
+      "dateComplaintFiled": "07/10/2026",
+      "vin": "2hgfc2f66lh",
+      "components": "UNKNOWN OR OTHER",
+      "summary": "The A/C went out on this vehicle. The A/C only worked half way in the car. It would only cool the passenger side and not drivers side. When I took it in to get it fixed, they said it was the condenser. There was a recall for the compressor shaft seal but not the condenser. They replaced the condense",
+      "products": [
+        {
+          "type": "Vehicle",
+          "productYear": "2020",
+          "productMake": "HONDA",
+          "productModel": "CIVIC",
+          "manufacturer": "Honda (American Honda Motor Co.)"
+        }
+      ]
+    },
+    {
+      "odiNumber": 11748962,
+      "manufacturer": "Honda (American Honda Motor Co.)",
+      "crash": false,
+      "fire": false,
+      "numberOfInjuries": 0,
+      "numberOfDeaths": 0,
+      "dateOfIncident": "07/11/2023",
+      "dateComplaintFiled": "07/08/2026",
+      "vin": "19XFC2F68LE",
+      "components": "FORWARD COLLISION AVOIDANCE",
+      "summary": "At least a half dozen times the car would brake automatically when nothing was in front of the car. The BRAKE warning light would appear on the dashboard as the car abruptly slowed down. The car slowed down but never came to a complete stop. This happened at various speeds. Once on the freeway at hi",
+      "products": [
+        {
+          "type": "Vehicle",
+          "productYear": "2020",
+          "productMake": "HONDA",
+          "productModel": "CIVIC",
+          "manufacturer": "Honda (American Honda Motor Co.)"
+        }
+      ]
+    },
+    {
+      "odiNumber": 11747930,
+      "manufacturer": "Honda (American Honda Motor Co.)",
+      "crash": false,
+      "fire": false,
+      "numberOfInjuries": 0,
+      "numberOfDeaths": 0,
+      "dateOfIncident": "07/01/2026",
+      "dateComplaintFiled": "07/02/2026",
+      "vin": "2HGFC4B6XLH",
+      "components": "STRUCTURE,VISIBILITY/WIPER",
+      "summary": "I reported this issue to insurance. The facts are that when I was watching a family member\u2019s toddler, I went to my vehicle to grab a stack of papers. While holding her, I reached in and grabbed the papers sitting directly on the back seat of the coupe vehicle (I.e., easy to reach).   Upon grabbing t",
+      "products": [
+        {
+          "type": "Vehicle",
+          "productYear": "2020",
+          "productMake": "HONDA",
+          "productModel": "CIVIC",
+          "manufacturer": "Honda (American Honda Motor Co.)"
+        }
+      ]
+    }
+  ]
+}

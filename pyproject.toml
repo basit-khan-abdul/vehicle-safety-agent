@@ -41,3 +41,10 @@ package = false
 asyncio_mode = "auto"
 pythonpath = ["backend"]
 testpaths = ["backend/tests"]
+# Live tests (backend/tests/live) hit the real NHTSA APIs and are excluded by
+# default so `pytest` stays offline, deterministic, and safe for every push/PR.
+# Run them explicitly with `pytest -m live` (a CLI -m overrides this default).
+addopts = "-m 'not live'"
+markers = [
+    "live: exercises the real NHTSA APIs over the network (excluded by default)",
+]

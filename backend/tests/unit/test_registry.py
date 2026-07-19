@@ -7,12 +7,22 @@ process. The seam is ``nhtsa._new_client``, which the client calls once per
 request; we swap it for an ``AsyncClient`` wired to an ``httpx.MockTransport``.
 """
 
+import json
+from pathlib import Path
+
 import httpx
 import pytest
 
 from vehicle_safety_mcp import nhtsa as client
 
 from app.tools import registry
+
+_FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def _load_fixture(name: str) -> dict:
+    """Load a captured real NHTSA response (see fixtures/README rationale)."""
+    return json.loads((_FIXTURES / name).read_text())
 
 
 def _install_routes(monkeypatch, routes: dict[str, dict]) -> None:
@@ -73,6 +83,33 @@ async def test_dispatch_get_recalls_routes_and_trims(monkeypatch):
         "21V215000",
         "23V458000",
     ]
+
+
+async def test_dispatch_decode_vin_trims_real_noisy_vpic_payload(monkeypatch):
+    # A real vPIC decode returns ~150 mostly-empty fields per vehicle. This
+    # asserts the shared client trims that captured payload down to the
+    # whitelisted signal fields — the trimming contract, exercised against the
+    # actual upstream shape rather than a hand-built stand-in.
+    raw = _load_fixture("vpic_decode_noisy.json")
+    raw_record = raw["Results"][0]
+    assert len(raw_record) > 100  # guard: the fixture really is the noisy shape
+    assert "BatteryInfo" in raw_record  # a representative empty-noise field
+
+    _install_routes(monkeypatch, {"/DecodeVinValues/": raw})
+
+    result = await registry.dispatch(
+        "decode_vin", {"vin": "5UXWX7C5*BA", "model_year": 2011}
+    )
+
+    # Right vehicle, and only whitelisted fields survive.
+    assert result["Make"] == "BMW"
+    assert result["Model"] == "X3"
+    assert result["ModelYear"] == "2011"
+    assert set(result).issubset(set(client._VIN_FIELDS))
+    # Noise (and empty values) are gone.
+    assert "BatteryInfo" not in result
+    assert "Doors" not in result
+    assert len(result) < len(raw_record)
 
 
 async def test_dispatch_check_vin_recalls_chains_decode_then_recalls(monkeypatch):

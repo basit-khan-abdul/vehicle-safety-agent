@@ -1,0 +1,54 @@
+{
+  "Count": 5,
+  "Message": "Results returned successfully",
+  "results": [
+    {
+      "Manufacturer": "Honda (American Honda Motor Co.)",
+      "NHTSACampaignNumber": "21V215000",
+      "parkIt": false,
+      "parkOutSide": false,
+      "overTheAirUpdate": false,
+      "ReportReceivedDate": "25/03/2021",
+      "Component": "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP",
+      "Summary": "Honda (American Honda Motor Co.) is recalling certain 2019-2020 Acura MDX, MDX Sport Hybrid, RDX, TLX, Honda Accord, Civic Hatchback, Insight, 2019 Acura ILX, Honda Accord Hybrid, Civic Coupe, Civic Coupe Si, Civic Sedan, Civic Sedan Si, Civic Type R, Fit, HR-V, Odyssey, Passport, Pilot and Ridgeline, and 2018-2019 CR-V vehicles.  The low-pressure fuel pump inside the fuel tank may fail.",
+      "Consequence": "Fuel pump failure can cause an engine stall while driving, increasing the risk of a crash.",
+      "Remedy": "Honda will notify owners, and dealers will replace the fuel pump assembly, free of charge.  Owner letters were mailed May 18, 2021.  Owners may contact Honda customer service at 1-888-234-2138.  Note: This recall is an expansion of recall 20V-314.",
+      "Notes": "Owners may also contact the National Highway Traffic Safety Administration Vehicle Safety Hotline at 1-888-327-4236 (TTY 1-800-424-9153), or go to www.safercar.gov.",
+      "ModelYear": "2020",
+      "Make": "HONDA",
+      "Model": "CIVIC"
+    },
+    {
+      "Manufacturer": "Honda (American Honda Motor Co.)",
+      "NHTSACampaignNumber": "23V458000",
+      "parkIt": false,
+      "parkOutSide": false,
+      "overTheAirUpdate": false,
+      "ReportReceivedDate": "29/06/2023",
+      "Component": "SERVICE BRAKES, HYDRAULIC:FOUNDATION COMPONENTS:MASTER CYLINDER",
+      "Summary": "Honda (American Honda Motor Co.) is recalling certain 2020-2021 Civic, 2020-2023 Ridgeline, 2021-2023 Passport, 2021-2022 Pilot, and 2020 Acura MDX vehicles.  The tie rod fastener that connects the brake booster and the brake master cylinder may have been improperly assembled during manufacturing, which can cause the brake master cylinder to separate from the booster assembly.",
+      "Consequence": "Brake master cylinder separation can cause a loss of brake function and increase the risk of a crash.",
+      "Remedy": "Dealers will inspect and repair the brake booster assembly as necessary, free of charge.  Owner notification letters were mailed August 7, 2023.  Owners may contact Honda customer service at 1-888-234-2138.  Honda's numbers for this recall are VEU, AEV, and ZET.",
+      "Notes": "Owners may also contact the National Highway Traffic Safety Administration Vehicle Safety Hotline at 1-888-327-4236 (TTY 1-800-424-9153), or go to www.nhtsa.gov.",
+      "ModelYear": "2020",
+      "Make": "HONDA",
+      "Model": "CIVIC"
+    },
+    {
+      "Manufacturer": "Honda (American Honda Motor Co.)",
+      "NHTSACampaignNumber": "23V858000",
+      "parkIt": false,
+      "parkOutSide": false,
+      "overTheAirUpdate": false,
+      "ReportReceivedDate": "18/12/2023",
+      "Component": "FUEL SYSTEM, GASOLINE:DELIVERY:FUEL PUMP",
+      "Summary": "Honda (American Honda Motor Co.) is recalling certain 2013-2023 Honda Accord, Civic Coupe, Civic Sedan, Civic Hatchback, Civic Type R, CR-V, HR-V, Ridgeline, Odyssey, Acura ILX, MDX, MDX Hybrid, RDX, RLX, TLX, 2019-2022 Honda Insight, Passport, 2020 Honda CR-V Hybrid, 2018-2019 Honda Clarity PHEV, Fit, and 2015-2020 Honda Accord Hybrid, Pilot, Acura NSX vehicles.  The fuel pump inside the fuel tank may fail.",
+      "Consequence": "Fuel pump failure can cause an engine stall while driving, increasing the risk of a crash.",
+      "Remedy": "Dealers will replace the fuel pump module, free of charge.  Owner letters were mailed September 6, 2024.  Owners may contact Honda customer service at 1-888-234-2138.  Honda's numbers for this recall are KGC and KGD.  This recall is an expansion of NHTSA recall numbers 21V-215 and 20V-314.",
+      "Notes": "Owners may also contact the National Highway Traffic Safety Administration Vehicle Safety Hotline at 1-888-327-4236 (TTY 1-800-424-9153), or go to www.nhtsa.gov.",
+      "ModelYear": "2020",
+      "Make": "HONDA",
+      "Model": "CIVIC"
+    }
+  ]
+}
