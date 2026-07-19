@@ -36,14 +36,18 @@ this table stays empty until a real eval run produces them.
 
 ## Status
 
-**First slice working, baseline pending.** The scaffold, CI, and docs skeleton are in
-place. The golden eval set (25 graded questions across 7 categories) and its grading
-harness are committed. The tool layer is wired to
-[`vehicle-safety-mcp`](https://github.com/basit-khan-abdul/vehicle-safety-mcp) (VIN
-decode, recalls, NCAP ratings, complaints). The first agent slice is implemented: a
-Claude tool-use loop that turns a question into a cited brief, served over `POST /ask`
-with per-request cost and per-IP rate caps. The committed eval baseline is still the
-stub run (0%); the first live baseline against the real agent has not been run yet.
+**First slice working, live baseline not yet run.** The scaffold, CI, and docs skeleton
+are in place. The golden eval set (25 graded questions across 7 categories) and its
+grading harness are committed. The tool layer is wired to
+[`vehicle-safety-mcp`](https://github.com/basit-khan-abdul/vehicle-safety-mcp) v0.2.0
+(VIN decode, recalls, NCAP ratings, complaints), reusing its resilient HTTP client
+(timeouts, bounded retry, honest degradation) as-is. The agent slice is implemented: a
+Claude tool-use loop with adaptive extended thinking that turns a question into a cited
+brief, served over `POST /ask` with per-request cost and per-IP rate caps. Tests are
+split into offline unit (mocked transport, Python 3.11 + 3.12 in CI) and live NHTSA
+suites, with a weekly contract-drift job. The live eval baseline **has not been run yet**
+— it needs an `ANTHROPIC_API_KEY`, so the only committed result is the stub run (0%) and
+the Eval results table above stays empty until a real run produces numbers.
 
 ## Testing philosophy
 
