@@ -27,16 +27,32 @@ public deployment come after the core is trustworthy.
 
 ## Eval results
 
-Populated from [`evals/results/`](evals/results/). **No numbers until there are numbers** —
-this table stays empty until a real eval run produces them.
+Populated from [`evals/results/`](evals/results/). First honest live baseline — the real
+agent (Claude tool-use loop over live NHTSA data) graded by a deterministic fact-check plus
+an LLM-as-judge:
 
-| date | eval set version | pass rate | citation accuracy | notes |
-|------|------------------|-----------|-------------------|-------|
-| —    | —                | —         | —                 | —     |
+| date | eval set version | model | pass rate | notes |
+|------|------------------|-------|-----------|-------|
+| 2026-07-21 | v0.1.0 | `claude-sonnet-4-6` | **12/25 (48%)** | First live baseline. `vin_decode` (0/3) and `comparison` (0/4) were depressed by an intermittent NHTSA ratings/recalls-host outage during the run: the agent correctly refused to fabricate, but the judge scored the missing required facts as fails. Full breakdown → [`2026-07-21-baseline.md`](evals/results/2026-07-21-baseline.md). |
+
+Per-category (this run):
+
+| category | passed |
+|----------|--------|
+| complaint_analysis | 3/3 |
+| out_of_scope_refusal | 3/4 |
+| safety_critical_caution | 2/3 |
+| us_recall_lookup | 3/6 |
+| ambiguous | 1/2 |
+| vin_decode | 0/3 |
+| comparison | 0/4 |
+
+Citation accuracy is not yet scored as a standalone metric — the harness currently grades
+answer correctness (required facts present, forbidden claims absent) and judge verdict.
 
 ## Status
 
-**First slice working, live baseline not yet run.** The scaffold, CI, and docs skeleton
+**First slice working, first honest live baseline recorded (12/25).** The scaffold, CI, and docs skeleton
 are in place. The golden eval set (25 graded questions across 7 categories) and its
 grading harness are committed. The tool layer is wired to
 [`vehicle-safety-mcp`](https://github.com/basit-khan-abdul/vehicle-safety-mcp) v0.2.0
@@ -45,9 +61,10 @@ grading harness are committed. The tool layer is wired to
 Claude tool-use loop with adaptive extended thinking that turns a question into a cited
 brief, served over `POST /ask` with per-request cost and per-IP rate caps. Tests are
 split into offline unit (mocked transport, Python 3.11 + 3.12 in CI) and live NHTSA
-suites, with a weekly contract-drift job. The live eval baseline **has not been run yet**
-— it needs an `ANTHROPIC_API_KEY`, so the only committed result is the stub run (0%) and
-the Eval results table above stays empty until a real run produces numbers.
+suites, with a weekly contract-drift job. A startup preflight verifies the
+`ANTHROPIC_API_KEY` with one minimal call so a missing/invalid key fails once, clearly,
+instead of surfacing as an error on every question. The first honest live baseline is now
+recorded — **12/25 (48%)**, see the Eval results table above.
 
 ## Testing philosophy
 
