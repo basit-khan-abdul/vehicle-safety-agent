@@ -385,6 +385,18 @@ def main() -> int:
     if args.validate_only:
         return 0
 
+    # Preflight: one minimal API call up front so a missing/invalid key fails
+    # once, clearly, instead of surfacing as an error on all N questions.
+    from app.core.config import get_settings
+    from app.core.preflight import PreflightError, verify_anthropic_key
+
+    try:
+        verify_anthropic_key(get_settings())
+    except PreflightError as exc:
+        print(f"FATAL: {exc}", file=sys.stderr)
+        return 3
+    print("Preflight: ANTHROPIC_API_KEY verified.")
+
     items = data["items"]
     if args.limit:
         items = items[: args.limit]

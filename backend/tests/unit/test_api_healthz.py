@@ -10,13 +10,15 @@ from app.api.app import create_app
 
 
 def test_healthz_ok():
-    client = TestClient(create_app())
+    # preflight=False: this test exercises wiring only and must not touch the
+    # network or require a key.
+    client = TestClient(create_app(preflight=False))
     resp = client.get("/healthz")
     assert resp.status_code == 200
     assert resp.json() == {"status": "ok"}
 
 
 def test_ask_rejects_empty_question():
-    client = TestClient(create_app())
+    client = TestClient(create_app(preflight=False))
     resp = client.post("/ask", json={"question": ""})
     assert resp.status_code == 422  # min_length=1 validation, no agent call
