@@ -71,7 +71,9 @@ suites, with a weekly contract-drift job. A startup preflight verifies the
 instead of surfacing as an error on every question. Two live runs are recorded — a **12/25
 (48%)** baseline taken during an NHTSA outage and a **22/25 (88%)** re-run on healthy data;
 the Eval results table above breaks the delta down honestly (most of it is infrastructure
-recovery, not code).
+recovery, not code). **Next up: EU recall data** — the source research and decision are in
+[ADR 002](docs/decisions/002-eu-data-sources.md) (Safety Gate first; implementation is a
+separate session).
 
 ## Testing philosophy
 
