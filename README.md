@@ -27,32 +27,37 @@ public deployment come after the core is trustworthy.
 
 ## Eval results
 
-Populated from [`evals/results/`](evals/results/). First honest live baseline — the real
-agent (Claude tool-use loop over live NHTSA data) graded by a deterministic fact-check plus
-an LLM-as-judge:
+Populated from [`evals/results/`](evals/results/). The real agent (Claude tool-use loop over
+live NHTSA data) graded by a deterministic fact-check plus an LLM-as-judge:
 
-| date | eval set version | model | pass rate | notes |
-|------|------------------|-------|-----------|-------|
-| 2026-07-21 | v0.1.0 | `claude-sonnet-4-6` | **12/25 (48%)** | First live baseline. `vin_decode` (0/3) and `comparison` (0/4) were depressed by an intermittent NHTSA ratings/recalls-host outage during the run: the agent correctly refused to fabricate, but the judge scored the missing required facts as fails. Full breakdown → [`2026-07-21-baseline.md`](evals/results/2026-07-21-baseline.md). |
+| date | run | eval set | model | pass rate | notes |
+|------|-----|----------|-------|-----------|-------|
+| 2026-07-21 | baseline | v0.1.0 | `claude-sonnet-4-6` | **12/25 (48%)** | First live baseline. `vin_decode` (0/3) and `comparison` (0/4) were depressed by an intermittent NHTSA ratings/recalls-host outage during the run — the agent correctly refused to fabricate; the judge scored missing facts as fails. [`baseline.md`](evals/results/2026-07-21-baseline.md) |
+| 2026-07-21 | post-fixes-1 | v0.1.0 | `claude-sonnet-4-6` | **22/25 (88%)** | Re-run on healthy NHTSA + one grader fix. **+10, but honestly attributed:** +8 is NHTSA recovering (vin_decode 0→3, comparison 0→4, rec_04), +1 is the earlier saf_01 grader fix, and only **+1 is this change** (oos_02 negation guard). [`post-fixes-1.md`](evals/results/2026-07-21-post-fixes-1.md) |
 
-Per-category (this run):
+Per-category (baseline → post-fixes-1):
 
-| category | passed |
-|----------|--------|
-| complaint_analysis | 3/3 |
-| out_of_scope_refusal | 3/4 |
-| safety_critical_caution | 2/3 |
-| us_recall_lookup | 3/6 |
-| ambiguous | 1/2 |
-| vin_decode | 0/3 |
-| comparison | 0/4 |
+| category | baseline | post-fixes-1 | what moved it |
+|----------|----------|--------------|---------------|
+| complaint_analysis | 3/3 | 3/3 | — |
+| out_of_scope_refusal | 3/4 | 4/4 | **grader fix this change** (oos_02 negation guard) |
+| safety_critical_caution | 2/3 | 3/3 | prior grader fix (saf_01, commit `9eb389c`) |
+| us_recall_lookup | 3/6 | 4/6 | NHTSA recovery; rec_05 now fails on a real hallucination, rec_06 hit a mid-run outage |
+| ambiguous | 1/2 | 1/2 | amb_02 fails on a judge-side connection error (agent answer is correct) |
+| vin_decode | 0/3 | 3/3 | NHTSA recovery (not a code change) |
+| comparison | 0/4 | 4/4 | NHTSA recovery (not a code change) |
 
-Citation accuracy is not yet scored as a standalone metric — the harness currently grades
-answer correctness (required facts present, forbidden claims absent) and judge verdict.
+The grader fix in `post-fixes-1` moved exactly one category on its own merits
+(`out_of_scope_refusal`, via oos_02); the rest of the jump is infrastructure recovery and a
+previously-shipped fix. The re-run also **surfaced a genuine grounding defect the outage had
+masked** — rec_05, where the agent padded correct recall numbers with invented ones — logged
+for a future fix. No category regressed. Citation accuracy is not yet scored as a standalone
+metric; the harness grades answer correctness (required facts present, forbidden claims
+absent) and judge verdict.
 
 ## Status
 
-**First slice working, first honest live baseline recorded (12/25).** The scaffold, CI, and docs skeleton
+**First slice working; live baseline 12/25, 22/25 on healthy NHTSA.** The scaffold, CI, and docs skeleton
 are in place. The golden eval set (25 graded questions across 7 categories) and its
 grading harness are committed. The tool layer is wired to
 [`vehicle-safety-mcp`](https://github.com/basit-khan-abdul/vehicle-safety-mcp) v0.2.0
@@ -63,8 +68,10 @@ brief, served over `POST /ask` with per-request cost and per-IP rate caps. Tests
 split into offline unit (mocked transport, Python 3.11 + 3.12 in CI) and live NHTSA
 suites, with a weekly contract-drift job. A startup preflight verifies the
 `ANTHROPIC_API_KEY` with one minimal call so a missing/invalid key fails once, clearly,
-instead of surfacing as an error on every question. The first honest live baseline is now
-recorded — **12/25 (48%)**, see the Eval results table above.
+instead of surfacing as an error on every question. Two live runs are recorded — a **12/25
+(48%)** baseline taken during an NHTSA outage and a **22/25 (88%)** re-run on healthy data;
+the Eval results table above breaks the delta down honestly (most of it is infrastructure
+recovery, not code).
 
 ## Testing philosophy
 
