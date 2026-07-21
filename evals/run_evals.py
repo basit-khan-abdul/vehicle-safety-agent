@@ -6,8 +6,12 @@ Loads ``evals/golden_set.yaml``, runs each question through a pluggable
 two independent ways:
 
   1. Deterministic fact-check (offline, no API): every ``required_fact`` must be
-     present (string / any_of / all_of / regex) and no ``forbidden_patterns`` may
-     match. Fast and cheap — the layer you iterate against.
+     present (string / any_of / all_of / regex), no ``forbidden_patterns`` may
+     match, and every recall campaign number in the answer must be *grounded* —
+     present in a tool result from the same turn. Grounding lives here, not in the
+     judge, because only this layer sees the tool results (ground truth); the judge
+     asked to spot "invented" numbers with no source list will flag real-but-unlisted
+     ones. Fast and cheap — the layer you iterate against.
   2. LLM-as-judge (``claude-sonnet-4-6``): grades ``required_facts`` +
      ``forbidden_behaviors`` against ``grading_notes`` with a strict rubric. This
      is what carries the behavioral categories (refusal, caution, ambiguous) that
@@ -86,11 +90,13 @@ def answer_fn(question: str) -> dict:
             "answer": f"agent error: {type(exc).__name__}: {exc}",
             "citations": [],
             "tool_calls": [],
+            "tool_results": [],
         }
     return {
         "answer": result.get("answer", ""),
         "citations": result.get("citations", []),
         "tool_calls": result.get("tool_calls", []),
+        "tool_results": result.get("tool_results", []),
     }
 
 
@@ -143,6 +149,26 @@ def validate(data: dict) -> list[str]:
 # ---------------------------------------------------------------------------
 # Deterministic fact-check
 # ---------------------------------------------------------------------------
+
+# A NHTSA recall campaign number, e.g. 21V215000 or 18E097000. These are
+# safety-critical, high-stakes tokens: every one that appears in an answer MUST
+# have come from a tool result in the same turn. The LLM judge cannot verify
+# this — it never sees the tool results — so grounding is enforced here, against
+# the actual data the tools returned. An ungrounded number is a fabrication.
+RECALL_NUMBER_RE = re.compile(r"\b\d{2}[VE]\d{6}\b", re.IGNORECASE)
+
+
+def _ungrounded_recall_numbers(answer: str, tool_results: list | None) -> list[str]:
+    """Recall-number tokens in the answer with no match in this turn's tool results."""
+    corpus = json.dumps(tool_results or [], default=str).upper()
+    ungrounded: list[str] = []
+    for tok in RECALL_NUMBER_RE.findall(answer):
+        up = tok.upper()
+        if up not in corpus and up not in ungrounded:
+            ungrounded.append(up)
+    return ungrounded
+
+
 def _norm(text: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", text.lower()).strip()
 
@@ -171,13 +197,14 @@ def _fact_label(fact) -> str:
     return str(fact)
 
 
-def deterministic_check(item: dict, answer: str) -> dict:
+def deterministic_check(item: dict, answer: str, tool_results: list | None = None) -> dict:
     required = item.get("required_facts") or []
     patterns = item.get("forbidden_patterns") or []
     missing = [_fact_label(f) for f in required if not _fact_present(f, answer)]
     triggered = [p for p in patterns if re.search(p, answer, re.IGNORECASE)]
+    ungrounded = _ungrounded_recall_numbers(answer, tool_results)
 
-    if missing or triggered:
+    if missing or triggered or ungrounded:
         status = "fail"
     elif required:
         status = "pass"  # affirmatively confirmed at least one hard fact
@@ -188,6 +215,7 @@ def deterministic_check(item: dict, answer: str) -> dict:
         "status": status,
         "missing_facts": missing,
         "forbidden_matched": triggered,
+        "ungrounded_numbers": ungrounded,
         "facts_total": len(required),
         "facts_found": len(required) - len(missing),
     }
@@ -276,7 +304,7 @@ def judge_check(item: dict, answer: str, client) -> dict:
 def score_item(item: dict, judge_client) -> dict:
     result = answer_fn(item["question"])
     answer = result.get("answer", "")
-    det = deterministic_check(item, answer)
+    det = deterministic_check(item, answer, result.get("tool_results", []))
 
     if judge_client is not None:
         judge = judge_check(item, answer, judge_client)
@@ -346,6 +374,11 @@ def build_report(rows: list[dict], meta: dict) -> str:
             lines.append(f"  - missing facts: {det['missing_facts']}")
         if det["forbidden_matched"]:
             lines.append(f"  - forbidden pattern matched: {det['forbidden_matched']}")
+        if det.get("ungrounded_numbers"):
+            lines.append(
+                "  - ungrounded recall numbers (in answer, not in any tool result): "
+                f"{det['ungrounded_numbers']}"
+            )
         if r["judge"] is None:
             lines.append("- judge: _skipped_")
         else:

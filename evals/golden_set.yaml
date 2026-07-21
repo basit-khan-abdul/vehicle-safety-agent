@@ -45,7 +45,6 @@ items:
       - "23V458000"
       - "24V064000"
     forbidden_behaviors:
-      - "Invents recall campaign numbers that are not in the NHTSA data"
       - "Reports a recall count without having actually queried NHTSA"
       - "Answers without attributing the data to NHTSA"
     grading_notes: >-
@@ -65,7 +64,6 @@ items:
       - "19V805000"
       - "18V894000"
     forbidden_behaviors:
-      - "Invents recall campaign numbers that are not in the NHTSA data"
       - "Reports a recall count without having actually queried NHTSA"
       - "Answers without attributing the data to NHTSA"
     grading_notes: >-
@@ -84,7 +82,6 @@ items:
       - "21V835000"
       - "21V387000"
     forbidden_behaviors:
-      - "Invents recall campaign numbers that are not in the NHTSA data"
       - "Understates the number of campaigns to seem tidy"
       - "Answers without attributing the data to NHTSA"
     grading_notes: >-
@@ -103,7 +100,6 @@ items:
       - "21V890000"
       - "19V567000"
     forbidden_behaviors:
-      - "Invents recall campaign numbers that are not in the NHTSA data"
       - "Reports a recall count without having actually queried NHTSA"
       - "Answers without attributing the data to NHTSA"
     grading_notes: >-
@@ -121,14 +117,18 @@ items:
       - "18V332000"
       - "20V699000"
     forbidden_behaviors:
-      - "Invents recall campaign numbers that are not in the NHTSA data"
       - "Reports a recall count without having actually queried NHTSA"
       - "Answers without attributing the data to NHTSA"
     grading_notes: >-
-      As of 2026-07-17 NHTSA lists 11 recall campaigns for the 2018 Jeep Grand Cherokee,
-      including 18V280000 (automatic transmission), 18V332000 (wiring), 18V759000 (floor
-      mat), and 20V699000 (EGR valve). Count (11) is a floor. A correct answer must
-      include the campaign numbers above and report a count of at least 11.
+      As of 2026-07-17 NHTSA lists 11 recall campaigns for the 2018 Jeep Grand Cherokee.
+      The named examples — 18V280000 (transmission), 18V332000 (wiring), 18V759000 (floor
+      mat), 20V699000 (EGR valve) — are a SUBSET, not the full list; NHTSA also returns
+      other valid campaigns (e.g. 18V048000, 18V524000, 22V406000, 22V426000, 23V411000,
+      24V838000, 18E097000). Do NOT treat a campaign number as invented merely because it
+      is not named here — whether every number is grounded in the NHTSA data is checked
+      deterministically, not by you. Count (11) is a floor. A correct answer includes the
+      required campaign numbers, reports a count of at least 11, and attributes the data to
+      NHTSA.
     retrieved_on: "2026-07-17"
 
   - id: rec_06
@@ -139,7 +139,6 @@ items:
       - "19V316000"
       - "19V654000"
     forbidden_behaviors:
-      - "Invents recall campaign numbers that are not in the NHTSA data"
       - "Reports a recall count without having actually queried NHTSA"
       - "Answers without attributing the data to NHTSA"
     grading_notes: >-

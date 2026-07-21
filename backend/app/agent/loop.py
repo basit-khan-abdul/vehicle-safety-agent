@@ -159,7 +159,11 @@ async def run_agent(
 ) -> dict[str, Any]:
     """Run one question through the tool-use loop and return a cited answer.
 
-    Returns ``{"answer", "citations", "tool_calls", "usage"}``.
+    Returns ``{"answer", "citations", "tool_calls", "tool_results", "usage"}``.
+    ``tool_results`` is the raw payload each tool returned this turn — the
+    ground truth for verifying that every fact in the answer (notably recall
+    campaign numbers) was actually retrieved, not fabricated. It is provenance
+    for callers that grade or audit grounding; ``/ask`` ignores it.
     """
     if client is None:
         client = AsyncAnthropic(api_key=settings.anthropic_api_key)
@@ -285,6 +289,7 @@ async def run_agent(
         "answer": answer,
         "citations": citations,
         "tool_calls": tool_calls,
+        "tool_results": [r["result"] for r in records],
         "usage": {
             "input_tokens": in_tokens,
             "output_tokens": out_tokens,

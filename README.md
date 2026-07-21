@@ -42,18 +42,25 @@ Per-category (baseline → post-fixes-1):
 | complaint_analysis | 3/3 | 3/3 | — |
 | out_of_scope_refusal | 3/4 | 4/4 | **grader fix this change** (oos_02 negation guard) |
 | safety_critical_caution | 2/3 | 3/3 | prior grader fix (saf_01, commit `9eb389c`) |
-| us_recall_lookup | 3/6 | 4/6 | NHTSA recovery; rec_05 now fails on a real hallucination, rec_06 hit a mid-run outage |
+| us_recall_lookup | 3/6 | 4/6* | NHTSA recovery; rec_05's fail was a **grader false-positive** (corrected — true 5/6), rec_06 hit a mid-run outage |
 | ambiguous | 1/2 | 1/2 | amb_02 fails on a judge-side connection error (agent answer is correct) |
 | vin_decode | 0/3 | 3/3 | NHTSA recovery (not a code change) |
 | comparison | 0/4 | 4/4 | NHTSA recovery (not a code change) |
 
 The grader fix in `post-fixes-1` moved exactly one category on its own merits
 (`out_of_scope_refusal`, via oos_02); the rest of the jump is infrastructure recovery and a
-previously-shipped fix. The re-run also **surfaced a genuine grounding defect the outage had
-masked** — rec_05, where the agent padded correct recall numbers with invented ones — logged
-for a future fix. No category regressed. Citation accuracy is not yet scored as a standalone
-metric; the harness grades answer correctness (required facts present, forbidden claims
-absent) and judge verdict.
+previously-shipped fix. No category regressed.
+
+*\*The `post-fixes-1` run scored rec_05 as a fail on a supposed hallucination; this was later
+shown to be a **judge false-positive** and fixed.* The judge never sees tool results, so when the
+agent correctly returned all 11 real NHTSA campaigns for the 2018 Jeep Grand Cherokee, the judge —
+whose notes named only 4 — flagged the other 7 real campaigns as "invented." Grounding now lives in
+the deterministic layer, which holds the tool results as ground truth: every recall-number token in
+an answer must appear in a tool result from the same turn, or the item is vetoed. A genuine
+hallucination is now structurally caught; a real-but-unlisted campaign is not. rec_05 re-verified
+`pass` for the right reason (corrected true score: **23/25**). Citation accuracy is not yet scored as
+a standalone metric; the harness grades required facts present, forbidden claims absent, recall-number
+grounding, and judge verdict.
 
 ## Status
 
