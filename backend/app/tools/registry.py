@@ -5,9 +5,10 @@ The agent loop stays deliberately generic. It reads:
   - ``TOOL_SCHEMAS`` — the list to advertise to Claude in the ``tools`` array;
   - ``dispatch(name, arguments)`` — to run whichever tool Claude picked.
 
-Neither the loop nor this module knows anything NHTSA-specific. When the EU
-tools (RAPEX/KBA, NCAP RAG) arrive, they append to ``TOOLS`` and everything
-downstream keeps working unchanged.
+Neither the loop nor this module knows anything NHTSA- or EU-specific. The EU
+Safety Gate tool (ADR 002) is just another append to ``TOOLS``; the loop, the
+citation machinery, and the schema tests all keep working unchanged. Future
+sources (KBA, NCAP RAG) land the same way.
 """
 
 from __future__ import annotations
@@ -16,7 +17,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 
-from . import nhtsa, schemas
+from . import eu_safety_gate, nhtsa, schemas
 
 ToolHandler = Callable[..., Awaitable[dict[str, Any]]]
 
@@ -41,6 +42,8 @@ TOOLS: list[Tool] = [
     Tool(schemas.GET_RECALLS, nhtsa.get_recalls),
     Tool(schemas.GET_SAFETY_RATINGS, nhtsa.get_safety_ratings),
     Tool(schemas.GET_COMPLAINTS, nhtsa.get_complaints),
+    # EU Safety Gate (ADR 002) — same registry seam, different jurisdiction.
+    Tool(schemas.SEARCH_EU_RECALLS, eu_safety_gate.search_eu_recalls),
 ]
 
 # Derived views, computed once. TOOL_SCHEMAS is the array handed to the API;

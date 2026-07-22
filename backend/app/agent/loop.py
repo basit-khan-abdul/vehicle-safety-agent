@@ -41,6 +41,7 @@ _MARKER_SLUGS = {
     "get_recalls": "recalls",
     "get_safety_ratings": "ratings",
     "get_complaints": "complaints",
+    "search_eu_recalls": "eu_recalls",
 }
 _MARKER_RE = re.compile(r"\[([a-z_]+:\d+)\]")
 
@@ -105,6 +106,13 @@ def _excerpt(tool: str, result: dict[str, Any]) -> str:
         top = next(iter(by_component.items()), None)
         top_str = f"; top component {top[0]} ({top[1]})" if top else ""
         return f"{total} complaint(s){top_str}"
+
+    if tool == "search_eu_recalls":
+        count = result.get("count", 0)
+        nums = [a.get("caseNumber") for a in result.get("alerts", [])]
+        nums = [n for n in nums if n]
+        shown = ", ".join(nums[:8]) or "none found"
+        return f"EU Safety Gate — {count} motor-vehicle alert(s): {shown}"
 
     return json.dumps(result, default=str)[:200]
 

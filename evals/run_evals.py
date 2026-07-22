@@ -73,9 +73,10 @@ EXPECTED_COUNTS = {
     "vin_decode": 3,
     "comparison": 4,
     "complaint_analysis": 3,
-    "out_of_scope_refusal": 4,
+    "out_of_scope_refusal": 3,  # v0.2.0: the VW ID.3 item graduated to eu_recall_lookup
     "safety_critical_caution": 3,
     "ambiguous": 2,
+    "eu_recall_lookup": 4,  # v0.2.0: EU Safety Gate slice (ADR 002)
 }
 CATEGORIES = list(EXPECTED_COUNTS)
 
@@ -569,6 +570,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run the vehicle-safety golden eval set.")
     parser.add_argument("--label", default="baseline-stub", help="run label (goes in the filename)")
     parser.add_argument("--limit", type=int, default=None, help="run only the first N items")
+    parser.add_argument(
+        "--category",
+        default=None,
+        help="run only items in these categories (comma-separated). The full file is "
+        "still validated first; this only narrows what is scored — useful for a "
+        "cheap, targeted run of one new category.",
+    )
     parser.add_argument("--no-judge", action="store_true", help="skip the LLM-as-judge pass")
     parser.add_argument("--date", default=None, help="override the results date (YYYY-MM-DD)")
     parser.add_argument("--validate-only", action="store_true", help="validate the YAML and exit")
@@ -614,6 +622,14 @@ def main() -> int:
         print(banner + "\n", file=sys.stderr)
 
     items = data["items"]
+    if args.category:
+        wanted = {c.strip() for c in args.category.split(",")}
+        unknown = wanted - set(CATEGORIES)
+        if unknown:
+            print(f"FATAL: unknown category/ies {sorted(unknown)}; valid: {CATEGORIES}", file=sys.stderr)
+            return 2
+        items = [it for it in items if it["category"] in wanted]
+        print(f"Category filter {sorted(wanted)}: {len(items)} item(s) selected.")
     if args.limit:
         items = items[: args.limit]
 

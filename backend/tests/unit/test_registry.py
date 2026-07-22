@@ -177,6 +177,7 @@ def test_registry_is_aligned_and_unique():
         "get_recalls",
         "get_safety_ratings",
         "get_complaints",
+        "search_eu_recalls",
     ]
     # The advertised schema array and the registered handlers stay in lockstep.
     assert [s["name"] for s in registry.TOOL_SCHEMAS] == names

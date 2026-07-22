@@ -16,8 +16,13 @@ import re
 
 import pytest
 
-from app.tools import nhtsa, registry
+from app.tools import registry
 from app.tools.schemas import SCHEMAS
+
+# name -> handler, resolved the same way the loop dispatches — source-agnostic,
+# so NHTSA and EU Safety Gate handlers are both covered without this test knowing
+# which module each lives in.
+_HANDLERS = {tool.schema["name"]: tool.handler for tool in registry.TOOLS}
 
 # Anthropic tool names: 1-64 chars from [a-zA-Z0-9_-].
 _NAME_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
@@ -58,7 +63,7 @@ def test_schema_has_anthropic_tool_shape(schema):
 
 @pytest.mark.parametrize("schema", SCHEMAS, ids=lambda s: s["name"])
 def test_schema_matches_handler_signature(schema):
-    handler = getattr(nhtsa, schema["name"])
+    handler = _HANDLERS[schema["name"]]
     params = inspect.signature(handler).parameters
 
     declared = set(schema["input_schema"]["properties"])

@@ -1,4 +1,4 @@
-"""Anthropic tool-use JSON schemas for the NHTSA tools.
+"""Anthropic tool-use JSON schemas for the NHTSA and EU Safety Gate tools.
 
 These are the definitions passed in the Messages API ``tools`` array. Claude
 sees only the ``name``, ``description``, and ``input_schema`` below — nothing
@@ -195,11 +195,58 @@ GET_COMPLAINTS: dict[str, Any] = {
 }
 
 
-# Order mirrors the registry and the tool set exposed by the MCP server.
+SEARCH_EU_RECALLS: dict[str, Any] = {
+    "name": "search_eu_recalls",
+    "description": (
+        "Search the EU Safety Gate (formerly RAPEX) rapid-alert system for "
+        "MOTOR-VEHICLE recall alerts matching a make and/or model. This is the "
+        "European counterpart to the US NHTSA recall tools: use it for "
+        "European-market vehicles (e.g. a VW ID.3), when the user asks about EU / "
+        "European recalls, or when comparing US and EU recalls for the same car. "
+        "Returns recent motor-vehicle alerts, each with its Safety Gate case "
+        "number (e.g. 'A12/00188/24' or 'SR/00355/26'), brand, product, "
+        "type-approval, risk type, hazard description, remedy, and notifying "
+        "country. Coverage is PARTIAL and notification-driven (heavily "
+        "Germany-sourced) and is keyed by brand and type-approval number, not by "
+        "consumer model year — so matching is by brand/free text, not an exact "
+        "make/model/year lookup, and an empty result means nothing was found in "
+        "Safety Gate, NOT that the vehicle is recall-free. EU data only; never "
+        "present it as, or blend it with, US NHTSA data."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": (
+                    "Free-text make and/or model to search, e.g. 'Volkswagen', "
+                    "'Tesla Model 3', 'BMW'. Safety Gate matches this across its "
+                    "alert text. Use the brand alone for the broadest recall "
+                    "history; add the model to narrow it."
+                ),
+            },
+            "max_results": {
+                "type": "integer",
+                "description": (
+                    "How many of the most-recent matching alerts to return. "
+                    "Optional; defaults to 10."
+                ),
+                "minimum": 1,
+                "maximum": 50,
+            },
+        },
+        "required": ["query"],
+    },
+}
+
+
+# Order mirrors the registry. The first five are US NHTSA (via the MCP server);
+# search_eu_recalls is the EU Safety Gate tool added in the EU slice (ADR 002).
 SCHEMAS: list[dict[str, Any]] = [
     DECODE_VIN,
     CHECK_VIN_RECALLS,
     GET_RECALLS,
     GET_SAFETY_RATINGS,
     GET_COMPLAINTS,
+    SEARCH_EU_RECALLS,
 ]

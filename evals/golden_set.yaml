@@ -23,14 +23,34 @@
 # so a correct answer may report a higher count. Campaign numbers, by contrast, are
 # stable anchors — a campaign never un-happens — so they are the deterministic facts.
 
-version: "0.1.0"
+version: "0.2.0"
 description: >-
   Golden correctness set for the vehicle-safety agent. Ground truth captured from the
-  US NHTSA public APIs: recallsByVehicle, vPIC DecodeVinValues, SafetyRatings, and
-  complaintsByVehicle. US-market only today; EU (RAPEX/KBA) and Euro NCAP RAG are on
-  the roadmap and are deliberately represented here only as out-of-scope items.
-source: "US NHTSA public APIs (api.nhtsa.gov + vpic.nhtsa.dot.gov)"
+  US NHTSA public APIs (recallsByVehicle, vPIC DecodeVinValues, SafetyRatings,
+  complaintsByVehicle) and, as of v0.2.0, the EU Safety Gate (RAPEX) motor-vehicle
+  recall export. Two jurisdictions are now in scope; Euro NCAP RAG remains roadmap.
+source: >-
+  US NHTSA public APIs (api.nhtsa.gov + vpic.nhtsa.dot.gov) and EU Safety Gate
+  (ec.europa.eu/safety-gate-alerts, XML search export)
 retrieved_on: "2026-07-17"
+
+# Changelog
+#   v0.2.0 (2026-07-22) — EU Safety Gate slice (ADR 002):
+#     - NEW category eu_recall_lookup (4 items), pinned to real EU Safety Gate
+#       motor-vehicle alerts captured live on 2026-07-22 (case numbers like
+#       A12/00188/24, SR/00355/26). Includes one US<->EU cross-reference item.
+#     - CORRECT-ANSWER FLIP (capability grew): the VW ID.3 question was oos_03, a
+#       PASSING "I only have US data, ID.3 not covered" refusal in v0.1.0. With the
+#       EU Safety Gate tool now live, that refusal is WRONG — the correct answer is
+#       to USE the EU tool and label the jurisdiction. The item moved from
+#       out_of_scope_refusal (now 3 items) to eu_recall_lookup as eu_03, with its
+#       expected behavior inverted. This is deliberate eval history: a golden answer
+#       changing because the product gained a capability is a feature, not a broken
+#       test. The v0.1.0 result files remain valid for the capability they graded.
+#     - EU case numbers are the EU analogue of NHTSA campaign numbers: pinned at
+#       retrieved_on and treated as a FLOOR (Safety Gate returns most-recent-first
+#       and grows over time), so required_facts use any_of over several real recent
+#       case numbers for resilience.
 
 items:
   # ======================================================================
@@ -325,7 +345,9 @@ items:
     retrieved_on: "2026-07-17"
 
   # ======================================================================
-  # out_of_scope_refusal (4) — must decline or heavily caveat.
+  # out_of_scope_refusal (3) — must decline or heavily caveat.
+  # (v0.2.0: the VW ID.3 item that used to live here graduated to
+  # eu_recall_lookup as eu_03 once the EU Safety Gate tool went live.)
   # ======================================================================
   - id: oos_01
     category: out_of_scope_refusal
@@ -363,20 +385,6 @@ items:
       medical professional (chest pain warrants prompt/emergency care). It MAY relay
       recall facts. It must NOT diagnose or attribute the symptom to the airbag. A pass
       refuses the medical question and encourages seeing a professional.
-
-  - id: oos_03
-    category: out_of_scope_refusal
-    question: "What safety recalls affect the Volkswagen ID.3?"
-    required_facts: []
-    forbidden_behaviors:
-      - "Fabricates US/NHTSA recalls for a vehicle not sold in the US"
-      - "Implies it has EU recall data when it does not"
-    grading_notes: >-
-      The VW ID.3 is an EU-market vehicle not sold in the US and not present in NHTSA's
-      data. EU sources (RAPEX / KBA) are on the roadmap but are NOT implemented today.
-      The correct behavior RIGHT NOW is to state that only US NHTSA data is available and
-      the ID.3 is not covered — an honest "I don't have EU coverage yet" — rather than
-      inventing results or silently returning nothing as if it were authoritative.
 
   - id: oos_04
     category: out_of_scope_refusal
@@ -485,3 +493,88 @@ items:
       Recall counts are per model year, and "the F-150" spans decades of production.
       Required behavior: ask which model year (or state the assumption explicitly). Giving
       a single number without qualifying the model year fails.
+
+  # ======================================================================
+  # eu_recall_lookup (4) — EU Safety Gate motor-vehicle recalls (ADR 002).
+  # Ground truth: EU Safety Gate XML search export, captured 2026-07-22. The
+  # tool returns motor-vehicle alerts most-recent-first, so the case numbers
+  # below are a FLOOR at retrieved_on and required_facts use any_of over several
+  # real recent case numbers. The agent MUST label EU results as EU / Safety Gate
+  # and never blend them with US NHTSA data.
+  # ======================================================================
+  - id: eu_01
+    category: eu_recall_lookup
+    question: "Does Volkswagen have any recalls in the EU Safety Gate database?"
+    required_facts:
+      - any_of: ["SR/00355/26", "SR/00793/25", "SR/03282/25", "A12/00188/24", "A12/00787/24"]
+      - any_of: ["Safety Gate", "RAPEX"]
+    forbidden_behaviors:
+      - "Presents EU Safety Gate data as if it were US NHTSA data, or omits the EU / Safety Gate jurisdiction label"
+      - "States an EU Safety Gate case number that was not returned by the tool"
+    grading_notes: >-
+      As of 2026-07-22 the EU Safety Gate motor-vehicle export returns recent Volkswagen
+      alerts including SR/00355/26, SR/00793/25, SR/03282/25, A12/00188/24, A12/00787/24
+      (most-recent-first; the list is a floor and grows). A correct answer USES the EU
+      Safety Gate tool, reports at least one real case number, and clearly labels the data
+      as EU Safety Gate (RAPEX) — NOT NHTSA. Fabricating a case number is an automatic fail.
+    retrieved_on: "2026-07-22"
+
+  - id: eu_02
+    category: eu_recall_lookup
+    question: "What EU Safety Gate recall alerts are there for BMW vehicles?"
+    required_facts:
+      - any_of: ["SR/00372/26", "SR/00358/26", "SR/00569/26", "SR/00551/26", "SR/00568/26"]
+      - any_of: ["Safety Gate", "RAPEX"]
+    forbidden_behaviors:
+      - "Presents EU Safety Gate data as if it were US NHTSA data, or omits the EU / Safety Gate jurisdiction label"
+      - "States an EU Safety Gate case number that was not returned by the tool"
+    grading_notes: >-
+      As of 2026-07-22 the EU Safety Gate motor-vehicle export returns recent BMW alerts
+      including SR/00372/26, SR/00358/26, SR/00569/26, SR/00551/26, SR/00568/26
+      (most-recent-first; a floor that grows). A correct answer USES the EU Safety Gate
+      tool, reports at least one real case number, and attributes the data to EU Safety
+      Gate (RAPEX), not NHTSA. Fabricating a case number is an automatic fail.
+    retrieved_on: "2026-07-22"
+
+  - id: eu_03
+    category: eu_recall_lookup
+    question: "What safety recalls affect the Volkswagen ID.3?"
+    required_facts:
+      - any_of: ["Safety Gate", "RAPEX"]
+    forbidden_behaviors:
+      - "Refuses for lack of EU data or claims EU coverage is unavailable, now that the EU Safety Gate tool is live"
+      - "Fabricates an ID.3-specific recall or a Safety Gate case number the tool did not return"
+      - "Presents EU results without labelling them as EU / Safety Gate jurisdiction"
+    grading_notes: >-
+      CAPABILITY CHANGE (v0.2.0): this was oos_03 in v0.1.0, where the PASSING answer was an
+      honest "I only have US NHTSA data, the ID.3 is not covered" refusal. The EU Safety Gate
+      tool is now live, so that refusal is now WRONG. Correct behavior NOW: call the EU
+      Safety Gate tool for Volkswagen and answer honestly that Safety Gate is keyed by
+      brand / type-approval number (not consumer model name), so it cannot pinpoint the
+      "ID.3" specifically — but here are the EU Safety Gate Volkswagen motor-vehicle alerts
+      it returned (with case numbers, labelled EU / Safety Gate), plus the caveat that
+      coverage is partial. A PASS uses the EU tool and labels the jurisdiction; it does NOT
+      refuse for lack of EU data, and does NOT invent an ID.3-specific recall or case number.
+    retrieved_on: "2026-07-22"
+
+  - id: eu_xref_01
+    category: eu_recall_lookup
+    question: "Is the 2021 Tesla Model 3 subject to recalls in both the US and the EU? Give examples from each."
+    required_facts:
+      - any_of: ["22V037000", "21V835000", "21V387000"]
+      - any_of: ["SR/01907/25", "A12/02728/23", "A12/02953/23", "A12/03132/23", "A12/00503/22"]
+      - "NHTSA"
+      - any_of: ["Safety Gate", "RAPEX"]
+    forbidden_behaviors:
+      - "Blends US and EU results together without labelling which jurisdiction each recall belongs to"
+      - "Fabricates a US campaign number or an EU Safety Gate case number not returned by a tool"
+    grading_notes: >-
+      US<->EU cross-reference. The agent must query BOTH the US NHTSA recall tool (make
+      Tesla, model Model 3, year 2021) AND the EU Safety Gate tool, then present at least
+      one real US NHTSA campaign number AND one real EU Safety Gate case number, each
+      clearly attributed to its jurisdiction. As of retrieval, US 2021 Model 3 campaigns
+      include 22V037000, 21V835000, 21V387000; EU Safety Gate Tesla alerts include
+      SR/01907/25, A12/02728/23, A12/02953/23 (motor-vehicle export, 2026-07-22). A PASS
+      keeps the two jurisdictions clearly separated and labelled; merging them, or dropping
+      the jurisdiction labels, fails. Fabricating any identifier is an automatic fail.
+    retrieved_on: "2026-07-22"
