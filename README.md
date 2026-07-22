@@ -13,10 +13,10 @@ safety brief** where every claim traces back to the source record it came from.
 
 The project is **evals-first**: before the agent does anything useful, a graded eval set
 defines what a good safety brief looks like — coverage, factual grounding, and citation
-accuracy — so changes are measured, not guessed at. Later phases extend coverage to the
-EU market (RAPEX / KBA recall data and US ↔ EU cross-referencing) and add
-retrieval-augmented generation over Euro NCAP test protocols. A TypeScript frontend and a
-public deployment come after the core is trustworthy.
+accuracy — so changes are measured, not guessed at. The first EU source — the EU's official
+**Safety Gate** recall database — is now live alongside NHTSA, with US ↔ EU cross-referencing;
+further national sources (KBA) and retrieval-augmented generation over Euro NCAP test protocols
+come next. A TypeScript frontend and a public deployment come after the core is trustworthy.
 
 ## Architecture
 
@@ -34,6 +34,7 @@ live NHTSA data) graded by a deterministic fact-check plus an LLM-as-judge:
 |------|-----|----------|-------|-----------|-------|
 | 2026-07-21 | baseline | v0.1.0 | `claude-sonnet-4-6` | **12/25 (48%)** | First live baseline. `vin_decode` (0/3) and `comparison` (0/4) were depressed by an intermittent NHTSA ratings/recalls-host outage during the run — the agent correctly refused to fabricate; the judge scored missing facts as fails. [`baseline.md`](evals/results/2026-07-21-baseline.md) |
 | 2026-07-21 | post-fixes-1 | v0.1.0 | `claude-sonnet-4-6` | **22/25 (88%)** | Re-run on healthy NHTSA + one grader fix. **+10, but honestly attributed:** +8 is NHTSA recovering (vin_decode 0→3, comparison 0→4, rec_04), +1 is the earlier saf_01 grader fix, and only **+1 is this change** (oos_02 negation guard). [`post-fixes-1.md`](evals/results/2026-07-21-post-fixes-1.md) |
+| 2026-07-22 | eu-slice-1 | v0.2.0 | `claude-sonnet-4-6` | **3/4 scored — true 4/4** | EU-only validation of the new **Safety Gate** slice (4 of 28 items; the 24 US items were not re-scored). `eu_03` (VW ID.3 — now answered from EU data instead of refused) and `eu_xref_01` (US ↔ EU cross-reference) both pass. `eu_01`'s judge fail is a **verified false-positive**: every case number it called "invented" was in the tool result — the rec_05 pattern recurring for EU. [`eu-slice-1.md`](evals/results/2026-07-22-eu-slice-1.md) |
 
 Per-category (baseline → post-fixes-1):
 
@@ -62,25 +63,42 @@ hallucination is now structurally caught; a real-but-unlisted campaign is not. r
 a standalone metric; the harness grades required facts present, forbidden claims absent, recall-number
 grounding, and judge verdict.
 
+The `eu-slice-1` row is the EU-only subset (`--category eu_recall_lookup`) of the v0.2.0 set, run on
+its own to validate the new Safety Gate capability under a tight API budget; a full-suite healthy
+re-run across all 28 items (US + EU) is pending and will be added as its own row.
+
 ## Status
 
-**First slice working; live baseline 12/25, 22/25 on healthy NHTSA.** The scaffold, CI, and docs skeleton
-are in place. The golden eval set (25 graded questions across 7 categories) and its
-grading harness are committed. The tool layer is wired to
-[`vehicle-safety-mcp`](https://github.com/basit-khan-abdul/vehicle-safety-mcp) v0.2.0
-(VIN decode, recalls, NCAP ratings, complaints), reusing its resilient HTTP client
-(timeouts, bounded retry, honest degradation) as-is. The agent slice is implemented: a
-Claude tool-use loop with adaptive extended thinking that turns a question into a cited
-brief, served over `POST /ask` with per-request cost and per-IP rate caps. Tests are
-split into offline unit (mocked transport, Python 3.11 + 3.12 in CI) and live NHTSA
-suites, with a weekly contract-drift job. A startup preflight verifies the
-`ANTHROPIC_API_KEY` with one minimal call so a missing/invalid key fails once, clearly,
-instead of surfacing as an error on every question. Two live runs are recorded — a **12/25
-(48%)** baseline taken during an NHTSA outage and a **22/25 (88%)** re-run on healthy data;
-the Eval results table above breaks the delta down honestly (most of it is infrastructure
-recovery, not code). **Next up: EU recall data** — the source research and decision are in
-[ADR 002](docs/decisions/002-eu-data-sources.md) (Safety Gate first; implementation is a
-separate session).
+**US + EU live; hallucination guard and infra/judge-aware grading in place.** The agent investigates
+both US **NHTSA** and EU **Safety Gate** recalls: a Claude tool-use loop with adaptive extended
+thinking turns a question into a cited, jurisdiction-labelled brief, served over `POST /ask` with
+per-request cost and per-IP rate caps. It never blends the two markets, labels every result by
+jurisdiction, and now answers EU-only vehicles (e.g. VW ID.3) from Safety Gate instead of refusing.
+The tool layer is wired to [`vehicle-safety-mcp`](https://github.com/basit-khan-abdul/vehicle-safety-mcp)
+v0.2.0 (VIN decode, recalls, NCAP ratings, complaints), reusing its resilient HTTP client (timeouts,
+bounded retry, honest degradation) as-is; the EU Safety Gate client mirrors the same contract.
+
+Three properties are enforced, not hoped for:
+
+- **Grounding is a deterministic veto.** Every NHTSA campaign-number token in an answer must appear in
+  a tool result from the same turn, or the item is failed — a genuine hallucination is structurally
+  caught, a real-but-unlisted campaign is not. An offline regression test freezes this on every push;
+  extending the same veto to EU case numbers is the next grader step.
+- **Infra and judge noise are categorised, not scored as agent failures.** A tool result carrying
+  `available:false` tags the item `infra_degraded`; a judge that still errors after bounded retries
+  marks the item `judge_error` and is excluded from the pass-rate denominator (shown as "N excluded").
+  A run also preflights NHTSA and warns loudly at the top when upstream is down. An outage or a flaky
+  judge can no longer masquerade as an agent fault.
+- **Pass rates are reported on healthy infrastructure, with honest attribution.** The **12/25 (48%)**
+  live baseline was taken during an NHTSA outage; the healthy re-run is **22/25 (88%)** (true **23/25**
+  after a corrected judge false-positive), and the table above breaks the delta down — most of it is
+  infrastructure recovery, not code.
+
+Tests split into offline unit (mocked transport, Python 3.11 + 3.12 in CI) and live suites, with a
+weekly contract-drift job; a startup preflight verifies the `ANTHROPIC_API_KEY` with one minimal call
+so a missing/invalid key fails once, clearly, instead of on every question. **Next up: broaden EU
+coverage** — KBA and other national sources per [ADR 002](docs/decisions/002-eu-data-sources.md), plus
+a full-suite healthy re-run across all 28 v0.2.0 items.
 
 ## Testing philosophy
 
@@ -96,9 +114,11 @@ surfaces as tracked breakage instead of silently wrong safety briefs.
 
 ## Roadmap
 
-1. **US recall slice** — agent investigates NHTSA recalls / ratings / complaints via
+1. **US recall slice** ✅ — agent investigates NHTSA recalls / ratings / complaints via
    `vehicle-safety-mcp` and produces a cited brief, graded against the eval set.
-2. **EU cross-reference** — add RAPEX / KBA recall data and cross-reference US ↔ EU.
+2. **EU cross-reference** *(first source live)* — EU **Safety Gate** recalls integrated with
+   US ↔ EU cross-referencing; KBA and other national sources next (see
+   [ADR 002](docs/decisions/002-eu-data-sources.md)).
 3. **RAG over NCAP docs** — retrieval-augmented answers grounded in Euro NCAP protocols.
 4. **TypeScript frontend** — a UI over the agent (see [`frontend/`](frontend/)).
 5. **Public deployment** — hosted, rate- and cost-capped, publicly reachable.
